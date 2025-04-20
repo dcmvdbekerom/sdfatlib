@@ -1,0 +1,18 @@
+
+ 26  27  28  29          STM32F103C8T6
+dkr pnk blu ora blk red  wires
+SCK  DO  DI  CS GND VCC  SPI
+B13 B14 B15 A08 GND 3V3  BluePill
+
+
+
+1   2    3   4   5   6   7  8 
+C10 C11 D02     C12     C08 C09 : STM32F446
+D2  D3C CMD VDD CLK VSS D0  D1  : SD
+NC  CS  DI  VDD SCK VSS DO  NC  : SPI  
+    A08 B15     B13     B14     : STM32F103.C8T6
+        MOSI    SCK     MISO
+        B05     B03     B04
+ 
+SPI1: AF5
+SPI3: AF6

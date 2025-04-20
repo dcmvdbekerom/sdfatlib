@@ -31,30 +31,32 @@
 #include "sdspi.h"
 
 // SPI peripheral to interface with SD card.
-#define SDDRV_SPI               SPI2
+#define SDDRV_SPI               SPI1
 
 // SPI related port.
 #define SDDRV_SPI_PORT          GPIOB
 
 // SPI chip selected (CS) related port.
-#define SDDRV_SPI_CS_PORT       GPIOA
+#define SDDRV_SPI_CS_PORT       GPIOC
 
 // SPI MOSI port pin.
-#define SDDRV_SPI_MOSI          GPIO_SPI2_MOSI
+#define SDDRV_SPI_MOSI          GPIO5 //GPIO_SPI1_MOSI
 
 // SPI MISO port pin.
-#define SDDRV_SPI_MISO          GPIO_SPI2_MISO
+#define SDDRV_SPI_MISO          GPIO4 //GPIO_SPI1_MISO
 
 // SPI SCK port pin.
-#define SDDRV_SPI_SCK           GPIO_SPI2_SCK
+#define SDDRV_SPI_SCK           GPIO3 //GPIO_SPI1_SCK
 
 // SPI chip select (CS) port pin.
-#define SDDRV_SPI_CS            GPIO8
+#define SDDRV_SPI_CS            GPIO11
 
 // SPI related clock configurations.
 #define SDDRV_SPI_PORT_CLK_ID       RCC_GPIOB
-#define SDDRV_SPI_CS_PORT_CLK_ID    RCC_GPIOA
-#define SDDRV_SPI_CLK_ID            RCC_SPI2
+#define SDDRV_SPI_CS_PORT_CLK_ID    RCC_GPIOC
+#define SDDRV_SPI_CLK_ID            RCC_SPI1
+
+//TODO: set C08, C12, and D02 to inputs
 
 void sdSPIInit()
 {
@@ -65,19 +67,33 @@ void sdSPIInit()
     // Enable peripheral clocks for SPI to handle SD card interface.
     rcc_periph_clock_enable(SDDRV_SPI_CLK_ID);
 
+    // Set PD2, PC8, and PC12 to input
+    gpio_mode_setup(GPIOC, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO8|GPIO12);
+    gpio_mode_setup(GPIOD, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO2);
+
     // Configure SCK, MOSI and CS pins in output mode.
-    gpio_set_mode(SDDRV_SPI_PORT, GPIO_MODE_OUTPUT_10_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, SDDRV_SPI_SCK | SDDRV_SPI_MOSI);
-    gpio_set_mode(SDDRV_SPI_CS_PORT, GPIO_MODE_OUTPUT_10_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, SDDRV_SPI_CS);
+    //gpio_set_mode(SDDRV_SPI_PORT, GPIO_MODE_OUTPUT_10_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, SDDRV_SPI_SCK | SDDRV_SPI_MOSI);
+    gpio_mode_setup(SDDRV_SPI_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, SDDRV_SPI_SCK | SDDRV_SPI_MOSI);
+    gpio_set_output_options(SDDRV_SPI_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, SDDRV_SPI_SCK | SDDRV_SPI_MOSI);
+    gpio_set_af(SDDRV_SPI_PORT, GPIO_AF5, SDDRV_SPI_SCK | SDDRV_SPI_MOSI);
+
+    //gpio_set_mode(SDDRV_SPI_CS_PORT, GPIO_MODE_OUTPUT_10_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, SDDRV_SPI_CS);
+    gpio_mode_setup(SDDRV_SPI_CS_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, SDDRV_SPI_CS);
+    gpio_set_output_options(SDDRV_SPI_CS_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, SDDRV_SPI_CS);
+
 
     // Configure MISO pin in input mode.
-    gpio_set_mode(SDDRV_SPI_PORT, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, SDDRV_SPI_MISO);
+    //gpio_set_mode(SDDRV_SPI_PORT, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, SDDRV_SPI_MISO);  
+    gpio_mode_setup(SDDRV_SPI_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, SDDRV_SPI_MISO);
+    gpio_set_output_options(SDDRV_SPI_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, SDDRV_SPI_MISO);
+    gpio_set_af(SDDRV_SPI_PORT, GPIO_AF5, SDDRV_SPI_MISO);
+
 }
 
 void sdCardIntfInit()
 {    
     // Initialize SPI in master mode to perform SD card communication.
-    spi_init_master(SDDRV_SPI, SPI_CR1_BAUDRATE_FPCLK_DIV_2, SPI_CR1_CPOL_CLK_TO_1_WHEN_IDLE, SPI_CR1_CPHA_CLK_TRANSITION_2, SPI_CR1_DFF_8BIT, SPI_CR1_MSBFIRST);
-
+    spi_init_master(SDDRV_SPI, SPI_CR1_BAUDRATE_FPCLK_DIV_8, SPI_CR1_CPOL_CLK_TO_1_WHEN_IDLE, SPI_CR1_CPHA_CLK_TRANSITION_2, SPI_CR1_DFF_8BIT, SPI_CR1_MSBFIRST);
     spi_enable_software_slave_management(SDDRV_SPI);
     spi_set_nss_high(SDDRV_SPI);
     spi_enable(SDDRV_SPI);
